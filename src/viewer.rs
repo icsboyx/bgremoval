@@ -1,8 +1,7 @@
 use anyhow::Result;
 use fast_image_resize::PixelType;
-use raylib::{ffi::MeasureText, prelude::*, texture::Image};
+use raylib::{prelude::*, texture::Image};
 use std::{sync::mpsc::Receiver, time::Instant};
-use tracing_subscriber::fmt::format;
 
 use crate::SETUP;
 
