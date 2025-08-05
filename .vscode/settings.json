@@ -1,0 +1,24 @@
+{
+  "cSpell.words": [
+    "bgremoval",
+    "bytesused",
+    "colorspace",
+    "CUDA",
+    "fourcc",
+    "framesizes",
+    "Lanczos",
+    "MJPEG",
+    "MJPG",
+    "Mmap",
+    "modnet",
+    "nchw",
+    "ndarray",
+    "nhwc",
+    "onnx",
+    "opencv",
+    "raylib",
+    "Resizer",
+    "turbojpeg",
+    "tvec"
+  ]
+}
