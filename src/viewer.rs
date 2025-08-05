@@ -3,6 +3,8 @@ use fast_image_resize::PixelType;
 use raylib::{prelude::*, texture::Image};
 use std::sync::mpsc::Receiver;
 
+use crate::SETUP;
+
 #[derive(Clone)]
 pub struct Frame {
     pub width: i32,
@@ -71,8 +73,12 @@ pub struct RaylibFrames {
 }
 
 pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
+    let scale_factor = 0.25 as f32;
     let (mut rl, thread) = raylib::init()
-        .size((1920 as f32 * 0.25) as i32 * 2, 600)
+        .size(
+            (SETUP.full_dec_width as f32 * scale_factor) as i32,
+            ((SETUP.full_dec_height + SETUP.small_dec_height) as f32 * scale_factor) as i32,
+        )
         .title("Camera Stream")
         .build();
     rl.set_target_fps(60);
@@ -115,19 +121,28 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
         let mut d = rl.begin_drawing(&thread);
 
         d.clear_background(Color::BLACK);
-        d.draw_texture_ex(&high_res_texture, Vector2::new(0.0, 0.0), 0.0, 0.25, Color::WHITE);
+        d.draw_texture_ex(
+            &high_res_texture,
+            Vector2::new(0.0, 0.0),
+            0.0,
+            scale_factor,
+            Color::WHITE,
+        );
         d.draw_texture_ex(
             &low_res_texture,
-            Vector2::new(0 as f32, high_res_frame.height as f32 * 0.25),
+            Vector2::new(0 as f32, high_res_frame.height as f32 * scale_factor),
             0.0,
-            0.25,
+            scale_factor,
             Color::WHITE,
         );
         d.draw_texture_ex(
             &ml_res_texture,
-            Vector2::new(low_res_frame.width as f32 * 0.25, high_res_frame.height as f32 * 0.25),
+            Vector2::new(
+                low_res_frame.width as f32 * scale_factor,
+                high_res_frame.height as f32 * scale_factor,
+            ),
             0.0,
-            0.25,
+            scale_factor,
             Color::WHITE,
         );
 

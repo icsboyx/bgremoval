@@ -1,4 +1,4 @@
-# BGRemoval - Real-time Background Removal
+# bgremoval - Real-time Background Removal
 
 A high-performance Rust application that captures video from a camera, removes the background using machine learning, and displays the result in real-time using Raylib.
 
@@ -15,13 +15,13 @@ A high-performance Rust application that captures video from a camera, removes t
 The application uses a multi-threaded pipeline architecture:
 
 ```
-Camera → Capture → Decoder → BGRemoval → Viewer
+Camera → Capture → Decoder → bgremoval → Viewer
          (MJPEG)   (RGB)     (ML Mask)   (Display)
 ```
 
 1. **Capture Thread**: Captures MJPEG frames from camera using V4L2
 2. **Decoder Thread**: Decodes MJPEG to RGB and resizes for ML processing
-3. **BGRemoval Thread**: Runs ONNX model inference to generate background masks
+3. **bgremoval Thread**: Runs ONNX model inference to generate background masks
 4. **Viewer Thread**: Displays results using Raylib
 
 ## Prerequisites
@@ -33,7 +33,7 @@ Camera → Capture → Decoder → BGRemoval → Viewer
 
 ### Dependencies
 - **Rust** (latest stable)
-- **CUDA Toolkit** (for GPU acceleration)e .
+- **CUDA Toolkit** (for GPU acceleration)
 - **TensorRT** (optional, for additional optimization)
 - **Development libraries**:
   ```bash
@@ -47,8 +47,8 @@ Camera → Capture → Decoder → BGRemoval → Viewer
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd BGRemoval
+   git clone https://github.com/icsboyx/bgremoval.git
+   cd bgremoval
    ```
 
 2. **Install ONNX Runtime**:
@@ -111,7 +111,7 @@ pub static SETUP: Setup = Setup {
 ## Project Structure
 
 ```
-BGRemoval/
+bgremoval/
 ├── src/
 │   ├── main.rs          # Main application and configuration
 │   ├── capture.rs       # Camera capture using V4L2

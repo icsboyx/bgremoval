@@ -56,7 +56,7 @@ fn main() -> Result<()> {
             eprintln!("Failed to open device: {:#?}", e);
             return Err(e.into());
         }
-    }; // /dev/video0
+    };
     let mut join_handles = Vec::new();
 
     println!("=== Supported Formats ===");
@@ -80,9 +80,6 @@ fn main() -> Result<()> {
     let (raylib_tx, raylib_rx) = std::sync::mpsc::channel::<RaylibFrames>();
 
     println!("Starting capture...");
-
-    // check_model()?;
-    // exit(1);
 
     join_handles.push(
         thread::Builder::new()
@@ -110,7 +107,7 @@ fn main() -> Result<()> {
     for handle in join_handles {
         let thread_name = handle.thread().name().unwrap_or("unknown").to_owned();
         match handle.join() {
-            Ok(Ok(())) => {} // Thread OK
+            Ok(Ok(())) => {}
             Ok(Err(e)) => eprintln!("Thread {:?} returned error: {:?}", &thread_name, e),
             Err(e) => eprintln!("Thread panicked: {:?}", e),
         }
