@@ -9,6 +9,7 @@ fast_image_resize = "5.2.1"
 ndarray = "0.16.1"
 ort = { version = "2.0.0-rc.10", features = ["cuda", "tensorrt"] }
 raylib = "5.5.1"
+tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
 turbojpeg = "1.3.3"
 v4l = "0.14.0"

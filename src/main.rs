@@ -45,6 +45,7 @@ pub struct Setup {
 
 fn main() -> Result<()> {
     println!("Starting camera stream...");
+
     // List all present devices
     for dev in enum_devices() {
         println!("Found device: {:?}, {:?}, {:?}", dev.path(), dev.name(), dev.type_id());

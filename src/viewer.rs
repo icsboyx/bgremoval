@@ -1,11 +1,11 @@
 use anyhow::Result;
 use fast_image_resize::PixelType;
 use raylib::{prelude::*, texture::Image};
-use std::sync::mpsc::Receiver;
+use std::{sync::mpsc::Receiver, time::Instant};
 
 use crate::SETUP;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Frame {
     pub width: i32,
     pub height: i32,
@@ -70,6 +70,7 @@ pub struct RaylibFrames {
     pub low_res_frame: Frame,
     pub ml_low_frame: Frame,
     pub ml_high_frame: Frame,
+    pub instant: Instant,
 }
 
 pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
@@ -80,6 +81,7 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
             ((SETUP.full_dec_height + SETUP.small_dec_height) as f32 * scale_factor) as i32,
         )
         .title("Camera Stream")
+        .log_level(raylib::consts::TraceLogLevel::LOG_ALL)
         .build();
     rl.set_target_fps(60);
 
@@ -88,10 +90,16 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
         low_res_frame,
         ml_low_frame: ml_frame,
         ml_high_frame: _ml_high_frame,
+        instant,
     }) = rx.recv()
     else {
         return Err(anyhow::anyhow!("Failed to receive initial setup frame"));
     };
+
+    println!(
+        "Initial frame received in {} ms, starting viewer...",
+        instant.elapsed().as_millis()
+    );
 
     // Create high resolution image
     let mut high_res_texture = rl.load_texture_from_image(
@@ -152,6 +160,7 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
                 low_res_frame,
                 ml_low_frame,
                 ml_high_frame,
+                instant,
             }) => {
                 // Create high resolution image
                 high_res_texture.update_texture(&blend(&high_res_frame.as_rgba(), &ml_high_frame.as_rgba()))?;
@@ -159,6 +168,7 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
                 low_res_texture.update_texture(&low_res_frame.as_rgba())?;
                 // Create ML processed image
                 ml_res_texture.update_texture(&ml_low_frame.as_rgba())?;
+                println!("Frame rendered in: {:?}", instant.elapsed());
             }
             Err(_) => {}
         };

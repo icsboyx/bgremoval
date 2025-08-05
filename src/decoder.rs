@@ -1,4 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender};
+use std::time::Instant;
 
 use anyhow::Result;
 use fast_image_resize::{self as fr, FilterType, ResizeAlg, ResizeOptions, SrcCropping};
@@ -76,6 +77,7 @@ pub fn decode(rx: Receiver<Vec<u8>>, ml_tx: Sender<MlFrames>) -> Result<()> {
         ml_tx.send(MlFrames {
             high_res_frame: high_res.clone(),
             low_res_frame: low_res.clone(),
+            instant: Instant::now(),
         })?;
     }
 

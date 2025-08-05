@@ -4,6 +4,7 @@ use anyhow::Result;
 use fast_image_resize::images::Image;
 use fast_image_resize::{FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer, SrcCropping};
 use std::ops::Mul;
+use std::time::Instant;
 
 use ort::session::Session;
 use ort::value::Tensor;
@@ -15,6 +16,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 pub struct MlFrames {
     pub high_res_frame: Frame,
     pub low_res_frame: Frame,
+    pub instant: Instant,
 }
 
 pub fn bgremoval(ml_rx: Receiver<MlFrames>, raylib_tx: Sender<RaylibFrames>) -> Result<()> {
@@ -33,19 +35,22 @@ pub fn bgremoval(ml_rx: Receiver<MlFrames>, raylib_tx: Sender<RaylibFrames>) -> 
         .with_name("BGRemoval")
         .commit()?;
 
-    let mut session = Session::builder()?.commit_from_file("models/model.onnx")?;
+    let mut session = Session::builder()?
+        .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)?
+        .commit_from_file("models/model.onnx")?;
 
     let mask_threshold = 250u8;
-    let mask_per_frame = 2;
+    let mask_per_frame = 0; // use 0 to process every frame
     let mut mask_per_frame_count = 0;
     let mut mask = vec![];
     // Loop
     while let Ok(MlFrames {
         high_res_frame,
         low_res_frame,
+        instant,
     }) = ml_rx.recv()
     {
-        if mask_per_frame_count == 0 || mask_per_frame_count % mask_per_frame == 0 {
+        if mask_per_frame == 0 || mask_per_frame_count == 0 || mask_per_frame_count % mask_per_frame == 0 {
             let tensor = Tensor::from_array(low_res_frame.to_nchw_f32())?;
             let outputs = session.run(inputs![tensor])?;
             let output = outputs["output"].try_extract_array::<f32>()?;
@@ -96,6 +101,7 @@ pub fn bgremoval(ml_rx: Receiver<MlFrames>, raylib_tx: Sender<RaylibFrames>) -> 
             low_res_frame,
             ml_low_frame,
             ml_high_frame,
+            instant,
         })?;
     }
     Ok(())
