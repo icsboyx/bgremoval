@@ -1,7 +1,8 @@
 use anyhow::Result;
 use fast_image_resize::PixelType;
-use raylib::{prelude::*, texture::Image};
+use raylib::{ffi::MeasureText, prelude::*, texture::Image};
 use std::{sync::mpsc::Receiver, time::Instant};
+use tracing_subscriber::fmt::format;
 
 use crate::SETUP;
 
@@ -74,7 +75,8 @@ pub struct RaylibFrames {
 }
 
 pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
-    let scale_factor = 0.25 as f32;
+    let scale_factor = 0.5 as f32;
+
     let (mut rl, thread) = raylib::init()
         .size(
             (SETUP.full_dec_width as f32 * scale_factor) as i32,
@@ -84,6 +86,10 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
         .log_level(raylib::consts::TraceLogLevel::LOG_ALL)
         .build();
     rl.set_target_fps(60);
+
+    let font = rl.load_font(&thread, "fonts/Roboto-Regular.ttf").unwrap();
+    font.texture()
+        .set_texture_filter(&thread, raylib::consts::TextureFilter::TEXTURE_FILTER_BILINEAR);
 
     let Ok(RaylibFrames {
         high_res_frame,
@@ -107,7 +113,7 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
         &Image::gen_image_color(high_res_frame.width, high_res_frame.height, Color::WHITE),
     )?;
     high_res_texture.set_texture_filter(&thread, raylib::consts::TextureFilter::TEXTURE_FILTER_BILINEAR);
-    high_res_texture.update_texture(&high_res_frame.as_rgba())?;
+    high_res_texture.update_texture(&blend(&high_res_frame.data, &_ml_high_frame.data))?;
 
     // Create high resolution image
     let mut low_res_texture = rl.load_texture_from_image(
@@ -115,7 +121,7 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
         &Image::gen_image_color(low_res_frame.width, low_res_frame.height, Color::WHITE),
     )?;
     low_res_texture.set_texture_filter(&thread, raylib::consts::TextureFilter::TEXTURE_FILTER_BILINEAR);
-    low_res_texture.update_texture(&low_res_frame.as_rgba())?;
+    low_res_texture.update_texture(&low_res_frame.data)?;
 
     // Create ML processed image
     let mut ml_res_texture = rl.load_texture_from_image(
@@ -153,7 +159,17 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
             scale_factor,
             Color::WHITE,
         );
-
+        d.draw_text_ex(
+            &font,
+            &format!(
+                "High Res: {}x{} with upscaled mask: from {}x{}",
+                high_res_frame.width, high_res_frame.height, ml_frame.width, ml_frame.height
+            ),
+            Vector2::new(10.0, 10.0),
+            30.0,
+            1.0,
+            Color::BLUE,
+        );
         match rx.recv() {
             Ok(RaylibFrames {
                 high_res_frame,
@@ -164,11 +180,37 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
             }) => {
                 // Create high resolution image
                 high_res_texture.update_texture(&blend(&high_res_frame.as_rgba(), &ml_high_frame.as_rgba()))?;
+                d.draw_text_ex(
+                    &font,
+                    &format!(
+                        "Total elaboration and render time: {} ms",
+                        instant.elapsed().as_millis(),
+                    ),
+                    Vector2::new(10.0, 40.0),
+                    30.0,
+                    1.0,
+                    Color::BLUE,
+                );
+
+                // SAFELY grab the default Font from the C API:
+
+                let scaling_text = format!("Raylib UI scaling factor: {}", scale_factor);
+                d.draw_text_ex(
+                    &font,
+                    &scaling_text,
+                    Vector2::new(
+                        (d.get_render_width() - raylib::core::RaylibHandle::measure_text(&d, &scaling_text, 30)) as f32,
+                        (d.get_render_height() - 35) as f32,
+                    ),
+                    30.0,
+                    1.0,
+                    Color::BLUE,
+                );
+
                 // Create low resolution image
                 low_res_texture.update_texture(&low_res_frame.as_rgba())?;
                 // Create ML processed image
                 ml_res_texture.update_texture(&ml_low_frame.as_rgba())?;
-                println!("Frame rendered in: {:?}", instant.elapsed());
             }
             Err(_) => {}
         };

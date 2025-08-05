@@ -26,8 +26,8 @@ pub static SETUP: Setup = Setup {
     full_dec_width: 1920,                  // Width for high resolution
     full_dec_height: 1080,                 // Height for high resolution
     ful_dec_pixel_type: PixelType::U8x4,   // Pixel type for high
-    small_dec_width: 512,                  // Width for low resolution
-    small_dec_height: 512,                 // Height for low resolution
+    small_dec_width: 640,                  // Width for low resolution
+    small_dec_height: 640,                 // Height for low resolution
     small_dec_pixel_type: PixelType::U8x4, // Pixel type for low resolution
 };
 
