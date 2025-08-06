@@ -15,10 +15,13 @@ pub fn decode(rx: Receiver<Vec<u8>>, ml_tx: Sender<MlFrames>) -> Result<()> {
     let mut decompressor = Decompressor::new()?;
     let mut resizer = Resizer::new();
 
-    let mut full_dec_buffer = vec![];
-    full_dec_buffer.resize(
-        SETUP.full_dec_width as usize * SETUP.full_dec_height as usize * SETUP.ful_dec_pixel_type.size(),
-        0 as u8,
+    let mut full_dec_buffer =
+        vec![0u8; (SETUP.full_dec_width as usize) * (SETUP.full_dec_height as usize) * SETUP.ful_dec_pixel_type.size()];
+
+    let mut small_img = fr::images::Image::new(
+        SETUP.small_dec_width,
+        SETUP.small_dec_height,
+        SETUP.small_dec_pixel_type,
     );
 
     while let Ok(data) = rx.recv() {
@@ -31,7 +34,7 @@ pub fn decode(rx: Receiver<Vec<u8>>, ml_tx: Sender<MlFrames>) -> Result<()> {
         decompressor.decompress(
             &data,
             Image {
-                pixels: &mut full_dec_buffer[..], // full_img_size
+                pixels: &mut full_dec_buffer,
                 width: SETUP.full_dec_width as usize,
                 height: SETUP.full_dec_height as usize,
                 format: PixelFormat::try_from(pixel_type_to_pixel_format(SETUP.ful_dec_pixel_type)).unwrap(),
@@ -42,18 +45,15 @@ pub fn decode(rx: Receiver<Vec<u8>>, ml_tx: Sender<MlFrames>) -> Result<()> {
         let full_img = fr::images::Image::from_slice_u8(
             SETUP.full_dec_width,
             SETUP.full_dec_height,
-            &mut full_dec_buffer[..],
+            &mut full_dec_buffer,
             SETUP.ful_dec_pixel_type,
         )?;
 
-        let mut small_img = fr::images::Image::new(
-            SETUP.small_dec_width,
-            SETUP.small_dec_height,
-            SETUP.small_dec_pixel_type,
-        );
-
         let options = ResizeOptions {
-            algorithm: ResizeAlg::Convolution(FilterType::Lanczos3),
+            algorithm: ResizeAlg::Convolution(FilterType::Gaussian),
+            // algorithm: ResizeAlg::Convolution(FilterType::Mitchell), // OK
+            // algorithm: ResizeAlg::Convolution(FilterType::Lanczos3),  //to sharp
+            // algorithm: ResizeAlg::SuperSampling(FilterType::CatmullRom, 10u8), // Testing booh
             cropping: SrcCropping::None,
             mul_div_alpha: false,
         };
@@ -71,7 +71,7 @@ pub fn decode(rx: Receiver<Vec<u8>>, ml_tx: Sender<MlFrames>) -> Result<()> {
             width: small_img.width() as i32,
             height: small_img.height() as i32,
             pixel_type: small_img.pixel_type(),
-            data: small_img.into_vec(),
+            data: small_img.buffer().to_vec(),
         };
 
         ml_tx.send(MlFrames {

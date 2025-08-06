@@ -39,7 +39,7 @@ pub fn bgremoval(ml_rx: Receiver<MlFrames>, raylib_tx: Sender<RaylibFrames>) -> 
         .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)?
         .commit_from_file("models/model.onnx")?;
 
-    let mask_threshold = 230u8;
+    let mask_threshold = 235 as u8;
     let mask_per_frame = 0; // use 0 to process every frame
     let mut mask_per_frame_count = 0;
     let mut mask = vec![];
@@ -123,7 +123,7 @@ fn resize_mask(
     let mut dst_img = Image::new(dst_width, dst_height, PixelType::U8x4);
 
     let options = ResizeOptions {
-        algorithm: ResizeAlg::Convolution(FilterType::Lanczos3),
+        algorithm: ResizeAlg::Convolution(FilterType::Box),
         cropping: SrcCropping::None,
         mul_div_alpha: false,
     };
