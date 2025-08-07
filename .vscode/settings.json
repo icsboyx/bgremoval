@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "bgra",
     "bgremoval",
     "bytesused",
     "colorspace",
@@ -21,6 +22,7 @@
     "Resizer",
     "Roboto",
     "turbojpeg",
-    "tvec"
+    "tvec",
+    "vcam"
   ]
 }

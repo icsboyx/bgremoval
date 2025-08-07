@@ -5,13 +5,13 @@ use fast_image_resize::images::Image;
 use fast_image_resize::{FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer, SrcCropping};
 use std::ops::Mul;
 use std::time::Instant;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 use ort::session::Session;
 use ort::value::Tensor;
 use ort::{execution_providers::*, inputs};
 use std::sync::mpsc::{Receiver, Sender};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 
 pub struct MlFrames {
     pub high_res_frame: Frame,

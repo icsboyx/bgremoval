@@ -1,7 +1,10 @@
 use anyhow::Result;
 use fast_image_resize::PixelType;
 use raylib::{prelude::*, texture::Image};
-use std::{sync::mpsc::Receiver, time::Instant};
+use std::{
+    sync::mpsc::{Receiver, Sender},
+    time::Instant,
+};
 
 use crate::SETUP;
 
@@ -43,6 +46,26 @@ impl Frame {
         }
     }
 
+    pub fn as_bgra(&self) -> Vec<u8> {
+        match self.pixel_type {
+            PixelType::U8x4 => {
+                let mut bgra = Vec::with_capacity(self.width as usize * self.height as usize * 4);
+                for px in self.data.chunks_exact(4) {
+                    bgra.extend_from_slice(&[px[2], px[1], px[0], px[3]]);
+                }
+                bgra
+            }
+            PixelType::U8x3 => {
+                let mut bgra = Vec::with_capacity(self.width as usize * self.height as usize * 4);
+                for px in self.data.chunks_exact(3) {
+                    bgra.extend_from_slice(&[px[2], px[1], px[0], 255]);
+                }
+                bgra
+            }
+            _ => panic!("Unsupported pixel type"),
+        }
+    }
+
     pub fn to_hwc_f32(&self) -> ndarray::Array3<f32> {
         let rgb = self.as_rgb();
         let width = self.width as usize;
@@ -73,7 +96,7 @@ pub struct RaylibFrames {
     pub instant: Instant,
 }
 
-pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
+pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>, vcam_tx: Sender<Vec<u8>>) -> Result<()> {
     let scale_factor = 0.5 as f32;
 
     let (mut rl, thread) = raylib::init()
@@ -178,6 +201,9 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>) -> Result<()> {
                 instant,
             }) => {
                 // Create high resolution image
+
+                vcam_tx.send(blend_green(&high_res_frame.as_rgba(), &ml_high_frame.as_rgba()))?;
+
                 high_res_texture.update_texture(&blend(&high_res_frame.as_rgba(), &ml_high_frame.as_rgba()))?;
                 d.draw_text_ex(
                     &font,
@@ -227,6 +253,20 @@ pub fn blend(image: &[u8], mask: &[u8]) -> Vec<u8> {
         } else {
             // Opaque mask alpha = background pixel: use mask color (green here)
             blended.extend_from_slice(&[0, 0, 0, 0]);
+        }
+    }
+    blended
+}
+pub fn blend_green(image: &[u8], mask: &[u8]) -> Vec<u8> {
+    assert_eq!(image.len(), mask.len());
+    let mut blended = Vec::with_capacity(image.len());
+    for (px, m) in image.chunks_exact(4).zip(mask.chunks_exact(4)) {
+        if m[3] == 0 {
+            // Transparent mask alpha = person pixel: keep original pixel
+            blended.extend_from_slice(px);
+        } else {
+            // Opaque mask alpha = background pixel: use mask color (green here)
+            blended.extend_from_slice(m);
         }
     }
     blended
