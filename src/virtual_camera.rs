@@ -43,9 +43,6 @@ pub fn virtual_cam(vcam_rx: Receiver<Vec<u8>>) -> Result<()> {
         buf.copy_from_slice(&output_frame.as_bgra());
         buf_out_meta.bytesused = buf.len() as u32;
 
-        // assert_eq!(buf.len(), frame.len(), "Buffer size mismatch");
-        // buf.copy_from_slice(&frame);
-
         println!("Sending frame to virtual camera");
     }
     Ok(())
