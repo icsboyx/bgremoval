@@ -200,10 +200,10 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>, vcam_tx: Sender<Vec<u8>>)
                 ml_high_frame,
                 instant,
             }) => {
-                // Create high resolution image
-
+                // Virtual Cam send frame with blended mask (green)
                 vcam_tx.send(blend_green(&high_res_frame.as_rgba(), &ml_high_frame.as_rgba()))?;
 
+                // Create high resolution image
                 high_res_texture.update_texture(&blend(&high_res_frame.as_rgba(), &ml_high_frame.as_rgba()))?;
                 d.draw_text_ex(
                     &font,
@@ -216,8 +216,6 @@ pub fn start_raylib_viewer(rx: Receiver<RaylibFrames>, vcam_tx: Sender<Vec<u8>>)
                     1.0,
                     Color::BLUE,
                 );
-
-                // SAFELY grab the default Font from the C API:
 
                 let scaling_text = format!("Raylib UI scaling factor: {}", scale_factor);
                 d.draw_text_ex(

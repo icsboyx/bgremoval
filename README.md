@@ -303,20 +303,7 @@ tracing-subscriber = "0.3"
 4. **Push** to branch (`git push origin feature/amazing-feature`)
 5. **Open** a Pull Request
 
-### Development Setup
-```bash
-# Install development tools
-cargo install cargo-watch cargo-expand
 
-# Run with auto-reload
-cargo watch -x run
-
-# Format code
-cargo fmt
-
-# Run tests
-cargo test
-```
 
 ## 📄 License
 
